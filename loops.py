@@ -69,14 +69,15 @@ def val_one_epoch(model, criterion, val_dataloader, device, epoch):
 
         epoch_loss = running_loss / dataset_size
 
-        y_pred = nn.Sigmoid()(y_pred)
+        # y_pred = nn.Sigmoid()(y_pred)
+        y_pred = nn.Softmax(dim=1)(y_pred)
 
         y_pred = y_pred.detach().cpu().numpy()
         targets = targets.detach().cpu().numpy()
 
-        print(y_pred)
-        print('----------------')
-        print(targets)
+        # print(y_pred)
+        # print('----------------')
+        # print(targets)
 
         val_acc = accuracy_score(targets, y_pred)
         val_f1 = f1_score(targets, y_pred)
