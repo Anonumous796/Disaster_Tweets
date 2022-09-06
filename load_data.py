@@ -3,8 +3,9 @@ from sklearn.model_selection import train_test_split
 from pandarallel import pandarallel
 import pandas as pd
 from utils import clear_text, clean
+from transformers import BertTokenizer, BertModel
 
-pandarallel.initialize(progress_bar=False)
+pandarallel.initialize(progress_bar=True)
 
 
 class TwitterDataset(Dataset):
@@ -22,7 +23,7 @@ class TwitterDataset(Dataset):
         if self.is_train:
             label = self.data.iloc[idx]['target']
         inputs = self.tokenizer.encode_plus(text, add_special_tokens=True, max_length=self.max_len,
-                                            pad_to_max_lengh=True, return_attention_mask=True,
+                                            padding='max_length', return_attention_mask=True,
                                             return_token_type_ids=True, return_tensors='pt')
         input_ids, attention_mask, token_type_ids = inputs["input_ids"], inputs["attention_mask"], inputs[
             "token_type_ids"]
@@ -41,16 +42,17 @@ class TwitterDataset(Dataset):
             }
 
 
-def prepare_dataloaders(model_name, max_len=256, batch_size=16):
+def prepare_dataloaders(model_name: str, max_len=256, batch_size=16):
     train = pd.read_csv('data/train.csv')
     train['text'] = train['text'].parallel_apply(clean)
     # train['text'] = train['text'].parallel_apply(clear_text)
     train, test = train_test_split(train, test_size=0.37, random_state=79)
-    train_dataset = TwitterDataset(train, model_name, max_len)
-    test_dataset = TwitterDataset(test, model_name, max_len)
+    tokenizer = BertTokenizer.from_pretrained(model_name)
+    train_dataset = TwitterDataset(train, tokenizer, max_len)
+    test_dataset = TwitterDataset(test, tokenizer, max_len)
+    ll = len(train_dataset)
     train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=4, pin_memory=True,
                                   drop_last=False)
     test_dataloader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=4, pin_memory=True,
                                  drop_last=False)
-
-    return train_dataloader, test_dataloader
+    return train_dataloader, test_dataloader, ll
