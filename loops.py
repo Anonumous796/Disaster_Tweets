@@ -8,6 +8,8 @@ import numpy as np
 import copy
 
 
+# traoin and val functions
+
 def train_one_epoch(model, optimizer, criterion, scheduler, train_dataloader, device):
     model.train()
     scaler = amp.GradScaler()
@@ -68,11 +70,9 @@ def val_one_epoch(model, criterion, val_dataloader, device, epoch):
         dataset_size += batch_size
 
         epoch_loss = running_loss / dataset_size
-
-        # y_pred = nn.Sigmoid()(y_pred)
-        y_pred = nn.Softmax(dim=1)(y_pred)
-
-        y_pred = y_pred.detach().cpu().numpy()
+        y_pred = nn.Sigmoid()(y_pred)
+        # y_pred = nn.Softmax(dim=1)(y_pred)
+        y_pred = y_pred.detach().cpu().numpy() >= 0.5
         targets = targets.detach().cpu().numpy()
 
         # print(y_pred)
