@@ -71,13 +71,9 @@ def val_one_epoch(model, criterion, val_dataloader, device, epoch):
 
         epoch_loss = running_loss / dataset_size
         y_pred = nn.Sigmoid()(y_pred)
-        # y_pred = nn.Softmax(dim=1)(y_pred)
+
         y_pred = y_pred.detach().cpu().numpy() >= 0.5
         targets = targets.detach().cpu().numpy()
-
-        # print(y_pred)
-        # print('----------------')
-        # print(targets)
 
         val_acc = accuracy_score(targets, y_pred)
         val_f1 = f1_score(targets, y_pred)
@@ -110,9 +106,9 @@ def run_training(model, optimizer, criterion, scheduler, train_dataloader, val_d
         print(
             f' - train_loss: {train_loss:0.4f} - val_loss: {val_loss:0.4f} - val_acc: {valid_acc:0.4f} - val_f1: {valid_f1:0.4f}')
 
-        if valid_acc >= best_acc:
-            print(f'Validation accuracy increased ({best_acc:0.4f} --> {valid_acc:0.4f}).  Saving model ...')
-            best_acc = valid_acc
+        if valid_f1 > best_f1:
+            print(f'Best F1 score: {valid_f1:0.4f} - Best Accuracy: {valid_acc:0.4f} - Epoch: {epoch}')
+            best_f1 = valid_f1
             best_model_wts = copy.deepcopy(model.state_dict())
             PATH = f"last_epoch-{best_epoch:02d}.bin"
             torch.save(model.state_dict(), PATH)
@@ -120,6 +116,8 @@ def run_training(model, optimizer, criterion, scheduler, train_dataloader, val_d
             print()
             print()
 
+        if valid_acc >= best_acc:
+            best_acc = valid_acc
     print(f'Best val Acc: {best_acc:0.4f}, Best val F1: {best_f1:0.4f}')
     model.load_state_dict(best_model_wts)
     return model
